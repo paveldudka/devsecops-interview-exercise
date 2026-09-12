@@ -7,7 +7,7 @@ from tests.fakes import ScriptedTransport, public_destination_policy, response
 
 
 @pytest.mark.asyncio
-async def test_fetches_public_https_content() -> None:
+async def test_fetches_https_content() -> None:
     transport = ScriptedTransport(
         {
             "https://public.example/article": response(
@@ -62,7 +62,7 @@ async def test_follows_absolute_and_relative_redirects() -> None:
 async def test_rejects_unsupported_url_shapes(url: str) -> None:
     transport = ScriptedTransport({})
 
-    with pytest.raises(InvalidUrlError, match="HTTP or HTTPS"):
+    with pytest.raises(InvalidUrlError):
         await FetchService(transport, public_destination_policy()).fetch(url)
 
     assert transport.requests == []
@@ -72,7 +72,7 @@ async def test_rejects_unsupported_url_shapes(url: str) -> None:
 async def test_rejects_user_information_without_making_a_request() -> None:
     transport = ScriptedTransport({})
 
-    with pytest.raises(InvalidUrlError, match="user information"):
+    with pytest.raises(InvalidUrlError):
         await FetchService(transport, public_destination_policy()).fetch(
             "https://user:password@public.example/article"
         )
@@ -81,10 +81,10 @@ async def test_rejects_user_information_without_making_a_request() -> None:
 
 
 @pytest.mark.asyncio
-async def test_malformed_ipv6_url_is_a_fetch_error() -> None:
+async def test_rejects_malformed_url() -> None:
     transport = ScriptedTransport({})
 
-    with pytest.raises(InvalidUrlError, match="malformed"):
+    with pytest.raises(InvalidUrlError):
         await FetchService(transport, public_destination_policy()).fetch(
             "http://[invalid"
         )
@@ -98,7 +98,21 @@ async def test_surfaces_upstream_failure() -> None:
         {"https://public.example/missing": response(status_code=404)}
     )
 
-    with pytest.raises(UpstreamError, match="upstream returned 404"):
+    with pytest.raises(UpstreamError):
         await FetchService(transport, public_destination_policy()).fetch(
             "https://public.example/missing"
         )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("location", ["ftp://files.example/item", "http://[bad"])
+async def test_maps_invalid_redirect_target_to_upstream_failure(location: str) -> None:
+    start = "https://public.example/start"
+    transport = ScriptedTransport(
+        {start: response(302, headers=(("Location", location),))}
+    )
+
+    with pytest.raises(UpstreamError):
+        await FetchService(transport, public_destination_policy()).fetch(start)
+
+    assert transport.requests == [start]

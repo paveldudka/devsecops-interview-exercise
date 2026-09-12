@@ -4,12 +4,12 @@ Date: 2026-09-12
 
 ## Frozen candidate starter
 
-Source commit: `acc44e2003cbc229af9498399a82c9c546cc378a`
+Source commit: `6d49822a441e69b14afdff2babe1290781fb638a`
 
 Commands and results:
 
 - `make verify-env` — passed with locked dependencies.
-- `make baseline` — passed: Ruff format/lint, strict mypy, 11 pytest tests.
+- `make baseline` — passed: Ruff format/lint, strict mypy, 14 pytest tests.
 - `python .interviewer/evaluator.py --expect unsafe` executed with the starter on `PYTHONPATH` — passed: direct IPv4, direct IPv6, link-local, and redirected protected destinations all reached the tracking transport; a public redirect chain still worked.
 - credential-shaped value scan — no matches in tracked candidate files.
 - candidate-facing leakage scan — no interviewer directory or named answer-key terms in the frozen tree.
@@ -21,7 +21,7 @@ The construction host's managed Python 3.12 installation was broken independentl
 Commands and results:
 
 - `make verify-env` — passed with locked dependencies.
-- `make baseline` — passed: Ruff format/lint, strict mypy, 20 pytest tests.
+- `make baseline` — passed: Ruff format/lint, strict mypy, 23 pytest tests.
 - `python .interviewer/evaluator.py --expect safe` — passed: all four modeled protected paths were denied before the protected outbound hop and the public redirect chain still worked.
 - all DNS and HTTP outcomes in tests/evaluator used `StaticResolver` and `TrackingTransport`/`ScriptedTransport`; no test contacted DNS, external HTTP, cloud services, or credentials.
 
@@ -34,7 +34,7 @@ Commands and results:
 - no `.interviewer` path;
 - no source commit reachable by object ID;
 - no unreachable Git objects; and
-- the complete 11-test candidate baseline passing in the exported repository.
+- the complete 14-test candidate baseline passing in the exported repository.
 
 ## Timing calibration
 

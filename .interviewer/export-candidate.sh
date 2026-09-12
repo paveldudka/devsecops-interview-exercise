@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CANDIDATE_SHA="acc44e2003cbc229af9498399a82c9c546cc378a"
+CANDIDATE_SHA="6d49822a441e69b14afdff2babe1290781fb638a"
 
 if [[ $# -ne 1 ]]; then
   echo "usage: $0 /absolute/path/to/new-candidate-copy" >&2

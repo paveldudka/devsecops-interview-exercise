@@ -5,7 +5,7 @@ import argparse
 import asyncio
 from dataclasses import dataclass
 
-from content_fetcher.service import FetchService, InvalidUrlError
+from content_fetcher.service import FetchError, FetchService
 from content_fetcher.transport import HttpResponse
 
 
@@ -45,7 +45,7 @@ async def request_is_blocked(url: str) -> tuple[bool, list[str]]:
     transport = TrackingTransport({url: HttpResponse(200, {}, b"sensitive")})
     try:
         await build_service(transport).fetch(url)
-    except InvalidUrlError:
+    except FetchError:
         return True, transport.requests
     return False, transport.requests
 
@@ -61,7 +61,7 @@ async def redirect_is_blocked() -> tuple[bool, list[str]]:
     )
     try:
         await build_service(transport).fetch(start)
-    except InvalidUrlError:
+    except FetchError:
         return True, transport.requests
     return False, transport.requests
 

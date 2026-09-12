@@ -1,6 +1,6 @@
 # Interviewer guide — confidential
 
-Do not share this directory, branch, commit history, diff, or branch name with a candidate. The candidate must receive a history-free export of commit `acc44e2003cbc229af9498399a82c9c546cc378a` using `export-candidate.sh`.
+Do not share this directory, branch, commit history, diff, or branch name with a candidate. The candidate must receive a history-free export of commit `6d49822a441e69b14afdff2babe1290781fb638a` using `export-candidate.sh`.
 
 ## Signal and scope
 
@@ -117,7 +117,6 @@ Full credit does not require solving every DNS rebinding or connection-pinning p
 - response bodies are buffered without a service-owned byte/decompression limit;
 - timeout behavior is inherited from `httpx`, not expressed as a product budget;
 - full URLs and error context are logged and may contain secrets;
-- transport exceptions are not translated into controlled API failures;
 - redirect scheme/port/downgrade and content-type policy are not product-defined.
 
 These show depth and prioritization. They do not compensate for missing the central finding, and candidates should not be rewarded for enumerating them without evidence.

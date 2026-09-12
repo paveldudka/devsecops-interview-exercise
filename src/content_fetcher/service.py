@@ -8,7 +8,7 @@ from content_fetcher.destination_policy import (
     ResolutionError,
 )
 from content_fetcher.models import FetchResult
-from content_fetcher.transport import HttpTransport
+from content_fetcher.transport import HttpTransport, TransportError
 
 
 class FetchError(Exception):
@@ -38,25 +38,40 @@ class FetchService:
         self._max_redirects = max_redirects
 
     async def fetch(self, requested_url: str) -> FetchResult:
+        self._validate_url(requested_url)
         current_url = requested_url
         redirects_followed = 0
 
         while True:
-            self._validate_url(current_url)
+            if current_url != requested_url:
+                try:
+                    self._validate_url(current_url)
+                except InvalidUrlError as exc:
+                    raise UpstreamError("upstream returned invalid redirect") from exc
             try:
                 await self._destination_policy.validate(current_url)
             except DestinationDenied as exc:
-                raise InvalidUrlError("destination is not permitted") from exc
+                if current_url == requested_url:
+                    raise InvalidUrlError("destination is not permitted") from exc
+                raise UpstreamError(
+                    "upstream redirected to denied destination"
+                ) from exc
             except ResolutionError as exc:
                 raise UpstreamError("destination could not be resolved") from exc
-            response = await self._transport.get(current_url)
+            try:
+                response = await self._transport.get(current_url)
+            except TransportError as exc:
+                raise UpstreamError("upstream request failed") from exc
 
             location = response.headers.get("location")
             if response.status_code in {301, 302, 303, 307, 308} and location:
                 if redirects_followed >= self._max_redirects:
                     raise UpstreamError("upstream redirect limit exceeded")
                 redirects_followed += 1
-                current_url = urljoin(current_url, location)
+                try:
+                    current_url = urljoin(current_url, location)
+                except ValueError as exc:
+                    raise UpstreamError("upstream returned invalid redirect") from exc
                 continue
 
             if response.status_code in {301, 302, 303, 307, 308}:

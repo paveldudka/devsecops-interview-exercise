@@ -58,7 +58,7 @@ async def test_applies_policy_to_each_redirect_hop() -> None:
         )
     )
 
-    with pytest.raises(InvalidUrlError, match="not permitted"):
+    with pytest.raises(UpstreamError, match="denied destination"):
         await FetchService(transport, policy).fetch(start)
 
     assert transport.requests == [start]
