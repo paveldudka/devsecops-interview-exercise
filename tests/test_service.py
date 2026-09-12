@@ -1,0 +1,74 @@
+"""Product behavior at the service boundary."""
+
+import pytest
+
+from content_fetcher.service import FetchError, FetchService
+from tests.fakes import ScriptedTransport, response
+
+
+@pytest.mark.asyncio
+async def test_fetches_public_https_content() -> None:
+    transport = ScriptedTransport(
+        {
+            "https://public.example/article": response(
+                headers=(("content-type", "text/plain"),), body=b"hello"
+            )
+        }
+    )
+
+    result = await FetchService(transport).fetch("https://public.example/article")
+
+    assert result.content == "hello"
+    assert result.content_type == "text/plain"
+    assert result.bytes_read == 5
+    assert result.final_url == "https://public.example/article"
+    assert transport.requests == ["https://public.example/article"]
+
+
+@pytest.mark.asyncio
+async def test_follows_absolute_and_relative_redirects() -> None:
+    transport = ScriptedTransport(
+        {
+            "http://public.example/start": response(
+                302, headers=(("location", "https://cdn.example/content"),)
+            ),
+            "https://cdn.example/content": response(
+                301, headers=(("location", "/v2/content"),)
+            ),
+            "https://cdn.example/v2/content": response(body=b"redirected"),
+        }
+    )
+
+    result = await FetchService(transport).fetch("http://public.example/start")
+
+    assert result.content == "redirected"
+    assert result.final_url == "https://cdn.example/v2/content"
+    assert transport.requests == [
+        "http://public.example/start",
+        "https://cdn.example/content",
+        "https://cdn.example/v2/content",
+    ]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "url",
+    ["file:///etc/passwd", "data:text/plain,hello", "https:///missing-host"],
+)
+async def test_rejects_unsupported_url_shapes(url: str) -> None:
+    transport = ScriptedTransport({})
+
+    with pytest.raises(FetchError, match="HTTP or HTTPS"):
+        await FetchService(transport).fetch(url)
+
+    assert transport.requests == []
+
+
+@pytest.mark.asyncio
+async def test_surfaces_upstream_failure() -> None:
+    transport = ScriptedTransport(
+        {"https://public.example/missing": response(status_code=404)}
+    )
+
+    with pytest.raises(FetchError, match="upstream returned 404"):
+        await FetchService(transport).fetch("https://public.example/missing")

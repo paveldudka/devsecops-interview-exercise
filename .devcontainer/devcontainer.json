@@ -1,0 +1,18 @@
+{
+  "name": "DevSecOps interview exercise",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "postCreateCommand": "make verify-env && make baseline",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "charliermarsh.ruff",
+        "ms-python.mypy-type-checker",
+        "ms-python.python"
+      ]
+    }
+  },
+  "remoteUser": "vscode"
+}
