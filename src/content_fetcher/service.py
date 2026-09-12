@@ -19,7 +19,7 @@ class UpstreamError(FetchError):
 
 
 class FetchService:
-    """Retrieve content while preserving normal HTTP redirect behavior."""
+    """Retrieve content and follow HTTP redirect chains."""
 
     def __init__(self, transport: HttpTransport) -> None:
         self._transport = transport
@@ -32,14 +32,19 @@ class FetchService:
             response = await self._transport.get(current_url)
 
             location = response.headers.get("location")
-            if 300 <= response.status_code < 400 and location:
+            if response.status_code in {301, 302, 303, 307, 308} and location:
                 current_url = urljoin(current_url, location)
                 continue
 
-            if 300 <= response.status_code < 400:
+            if response.status_code in {301, 302, 303, 307, 308}:
                 raise UpstreamError(
                     "upstream returned redirect "
                     f"{response.status_code} without location"
+                )
+
+            if 300 <= response.status_code < 400:
+                raise UpstreamError(
+                    f"upstream returned unexpected status {response.status_code}"
                 )
 
             if response.status_code >= 400:

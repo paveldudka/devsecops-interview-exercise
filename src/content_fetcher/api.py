@@ -16,23 +16,24 @@ logger = logging.getLogger(__name__)
 def create_app(fetch_service: FetchService | None = None) -> FastAPI:
     """Create the API, optionally with an injected service."""
 
-    @asynccontextmanager
-    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        if fetch_service is not None:
-            app.state.fetch_service = fetch_service
-            yield
-            return
+    owned_transport: HttpxTransport | None = None
+    service = fetch_service
+    if service is None:
+        owned_transport = HttpxTransport()
+        service = FetchService(owned_transport)
 
-        transport = HttpxTransport()
-        app.state.fetch_service = FetchService(transport)
+    @asynccontextmanager
+    async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         try:
             yield
         finally:
-            await transport.close()
+            if owned_transport is not None:
+                await owned_transport.close()
 
     app = FastAPI(title="Content Fetcher", version="0.1.0", lifespan=lifespan)
-    if fetch_service is not None:
-        app.state.fetch_service = fetch_service
+    # This also makes injected services available to ASGI test clients, which do
+    # not run application lifespan events automatically.
+    app.state.fetch_service = service
 
     @app.get("/healthz")
     async def health() -> dict[str, str]:
@@ -44,10 +45,10 @@ def create_app(fetch_service: FetchService | None = None) -> FastAPI:
             service: FetchService = app.state.fetch_service
             return await service.fetch(payload.url)
         except InvalidUrlError as exc:
-            logger.warning("fetch failed url=%s error=%s", payload.url, exc)
+            logger.warning("fetch failed url=%r error=%r", payload.url, exc)
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         except UpstreamError as exc:
-            logger.warning("upstream failed url=%s error=%s", payload.url, exc)
+            logger.warning("upstream failed url=%r error=%r", payload.url, exc)
             raise HTTPException(
                 status_code=502, detail="upstream fetch failed"
             ) from exc

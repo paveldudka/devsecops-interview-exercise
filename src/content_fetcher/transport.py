@@ -9,7 +9,7 @@ import httpx
 
 @dataclass(frozen=True)
 class HttpResponse:
-    """Transport-neutral HTTP response with case-insensitive header behavior."""
+    """Transport-neutral HTTP response with lowercase-normalized header keys."""
 
     status_code: int
     headers: Mapping[str, str]
@@ -35,11 +35,12 @@ class HttpxTransport:
     """Production adapter around httpx."""
 
     def __init__(self, client: httpx.AsyncClient | None = None) -> None:
-        """Create a transport; injected clients must not follow redirects."""
-        self._client = client or httpx.AsyncClient(follow_redirects=False)
+        self._client = client
 
     async def get(self, url: str) -> HttpResponse:
-        response = await self._client.get(url)
+        if self._client is None:
+            self._client = httpx.AsyncClient(follow_redirects=False)
+        response = await self._client.get(url, follow_redirects=False)
         return HttpResponse(
             status_code=response.status_code,
             headers=response.headers,
@@ -47,4 +48,5 @@ class HttpxTransport:
         )
 
     async def close(self) -> None:
-        await self._client.aclose()
+        if self._client is not None:
+            await self._client.aclose()

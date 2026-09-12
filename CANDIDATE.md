@@ -29,6 +29,7 @@ Tell the interviewer if either command fails. Environment setup is not part of t
 ### 0–15 minutes — independent assessment
 
 - Do not use AI tools.
+- Public documentation is allowed.
 - Read the code and architecture notes.
 - Record prioritized risks and repository evidence in `NOTES.md`.
 - Explain which improvement you would implement and why.
@@ -44,7 +45,7 @@ Tell the interviewer if either command fails. Environment setup is not part of t
 
 - Stop using AI tools.
 - The interviewer will provide the same standardized requirement update used for all candidates.
-- Assess your current design and adapt the implementation or explain the exact follow-up needed.
+- Assess your current design and adapt the implementation or record the exact follow-up needed under “Requirement update” in `NOTES.md`.
 
 ### 60–75 minutes — walkthrough and defense
 
@@ -54,7 +55,7 @@ Tell the interviewer if either command fails. Environment setup is not part of t
 
 ## Submission
 
-Commit your final result. Your commit should include:
+Create a local commit containing your final result; you do not need to push it. One or more commits are acceptable. Your final result should include:
 
 - completed `NOTES.md`;
 - the focused implementation change; and

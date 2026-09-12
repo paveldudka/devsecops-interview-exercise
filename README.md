@@ -23,6 +23,7 @@ make baseline    # run all candidate-visible checks
 make test        # run candidate-visible tests
 make lint        # check formatting and lint
 make typecheck   # run static type checking
+make format      # apply formatting and safe lint fixes
 make run         # start the local API on port 8000
 ```
 

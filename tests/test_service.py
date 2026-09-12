@@ -53,7 +53,7 @@ async def test_follows_absolute_and_relative_redirects() -> None:
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "url",
-    ["file:///etc/passwd", "data:text/plain,hello", "https:///missing-host"],
+    ["mailto:user@example.com", "data:text/plain,hello", "https:///missing-host"],
 )
 async def test_rejects_unsupported_url_shapes(url: str) -> None:
     transport = ScriptedTransport({})
