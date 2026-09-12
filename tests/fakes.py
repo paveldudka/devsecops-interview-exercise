@@ -2,6 +2,7 @@
 
 from collections.abc import Iterable
 
+from content_fetcher.destination_policy import DestinationPolicy, StaticResolver
 from content_fetcher.transport import HttpResponse
 
 
@@ -27,3 +28,16 @@ def response(
     body: bytes = b"",
 ) -> HttpResponse:
     return HttpResponse(status_code, dict(headers), body)
+
+
+def public_destination_policy() -> DestinationPolicy:
+    """Return deterministic globally routable answers for visible test hosts."""
+
+    return DestinationPolicy(
+        StaticResolver(
+            {
+                "public.example": ("8.8.8.8",),
+                "cdn.example": ("2606:4700:4700::1111",),
+            }
+        )
+    )

@@ -2,6 +2,11 @@
 
 from urllib.parse import urljoin, urlsplit
 
+from content_fetcher.destination_policy import (
+    DestinationDenied,
+    DestinationPolicy,
+    ResolutionError,
+)
 from content_fetcher.models import FetchResult
 from content_fetcher.transport import HttpTransport
 
@@ -21,18 +26,36 @@ class UpstreamError(FetchError):
 class FetchService:
     """Retrieve content and follow HTTP redirect chains."""
 
-    def __init__(self, transport: HttpTransport) -> None:
+    def __init__(
+        self,
+        transport: HttpTransport,
+        destination_policy: DestinationPolicy,
+        *,
+        max_redirects: int = 5,
+    ) -> None:
         self._transport = transport
+        self._destination_policy = destination_policy
+        self._max_redirects = max_redirects
 
     async def fetch(self, requested_url: str) -> FetchResult:
         current_url = requested_url
+        redirects_followed = 0
 
         while True:
             self._validate_url(current_url)
+            try:
+                await self._destination_policy.validate(current_url)
+            except DestinationDenied as exc:
+                raise InvalidUrlError("destination is not permitted") from exc
+            except ResolutionError as exc:
+                raise UpstreamError("destination could not be resolved") from exc
             response = await self._transport.get(current_url)
 
             location = response.headers.get("location")
             if response.status_code in {301, 302, 303, 307, 308} and location:
+                if redirects_followed >= self._max_redirects:
+                    raise UpstreamError("upstream redirect limit exceeded")
+                redirects_followed += 1
                 current_url = urljoin(current_url, location)
                 continue
 

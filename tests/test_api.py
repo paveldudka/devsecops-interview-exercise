@@ -5,7 +5,7 @@ import pytest
 
 from content_fetcher.api import create_app
 from content_fetcher.service import FetchService
-from tests.fakes import ScriptedTransport, response
+from tests.fakes import ScriptedTransport, public_destination_policy, response
 
 
 @pytest.mark.asyncio
@@ -13,7 +13,7 @@ async def test_fetch_endpoint_returns_modeled_content() -> None:
     transport = ScriptedTransport(
         {"https://public.example/readme": response(body=b"document")}
     )
-    app = create_app(FetchService(transport))
+    app = create_app(FetchService(transport, public_destination_policy()))
 
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app), base_url="http://test"
@@ -34,7 +34,7 @@ async def test_fetch_endpoint_returns_modeled_content() -> None:
 
 @pytest.mark.asyncio
 async def test_fetch_endpoint_maps_invalid_input_to_client_error() -> None:
-    app = create_app(FetchService(ScriptedTransport({})))
+    app = create_app(FetchService(ScriptedTransport({}), public_destination_policy()))
 
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app), base_url="http://test"
@@ -55,7 +55,8 @@ async def test_fetch_endpoint_maps_upstream_failure_to_bad_gateway() -> None:
         FetchService(
             ScriptedTransport(
                 {"https://public.example/down": response(status_code=503)}
-            )
+            ),
+            public_destination_policy(),
         )
     )
 

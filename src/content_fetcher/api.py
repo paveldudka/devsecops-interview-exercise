@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 
+from content_fetcher.destination_policy import DestinationPolicy, SocketResolver
 from content_fetcher.models import FetchRequest, FetchResult
 from content_fetcher.service import FetchService, InvalidUrlError, UpstreamError
 from content_fetcher.transport import HttpxTransport
@@ -20,7 +21,7 @@ def create_app(fetch_service: FetchService | None = None) -> FastAPI:
     service = fetch_service
     if service is None:
         owned_transport = HttpxTransport()
-        service = FetchService(owned_transport)
+        service = FetchService(owned_transport, DestinationPolicy(SocketResolver()))
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:

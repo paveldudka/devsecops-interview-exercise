@@ -3,7 +3,7 @@
 import pytest
 
 from content_fetcher.service import FetchService, InvalidUrlError, UpstreamError
-from tests.fakes import ScriptedTransport, response
+from tests.fakes import ScriptedTransport, public_destination_policy, response
 
 
 @pytest.mark.asyncio
@@ -16,7 +16,9 @@ async def test_fetches_public_https_content() -> None:
         }
     )
 
-    result = await FetchService(transport).fetch("https://public.example/article")
+    result = await FetchService(transport, public_destination_policy()).fetch(
+        "https://public.example/article"
+    )
 
     assert result.content == "hello"
     assert result.content_type == "text/plain"
@@ -39,7 +41,9 @@ async def test_follows_absolute_and_relative_redirects() -> None:
         }
     )
 
-    result = await FetchService(transport).fetch("http://public.example/start")
+    result = await FetchService(transport, public_destination_policy()).fetch(
+        "http://public.example/start"
+    )
 
     assert result.content == "redirected"
     assert result.final_url == "https://cdn.example/v2/content"
@@ -59,7 +63,7 @@ async def test_rejects_unsupported_url_shapes(url: str) -> None:
     transport = ScriptedTransport({})
 
     with pytest.raises(InvalidUrlError, match="HTTP or HTTPS"):
-        await FetchService(transport).fetch(url)
+        await FetchService(transport, public_destination_policy()).fetch(url)
 
     assert transport.requests == []
 
@@ -69,7 +73,7 @@ async def test_rejects_user_information_without_making_a_request() -> None:
     transport = ScriptedTransport({})
 
     with pytest.raises(InvalidUrlError, match="user information"):
-        await FetchService(transport).fetch(
+        await FetchService(transport, public_destination_policy()).fetch(
             "https://user:password@public.example/article"
         )
 
@@ -81,7 +85,9 @@ async def test_malformed_ipv6_url_is_a_fetch_error() -> None:
     transport = ScriptedTransport({})
 
     with pytest.raises(InvalidUrlError, match="malformed"):
-        await FetchService(transport).fetch("http://[invalid")
+        await FetchService(transport, public_destination_policy()).fetch(
+            "http://[invalid"
+        )
 
     assert transport.requests == []
 
@@ -93,4 +99,6 @@ async def test_surfaces_upstream_failure() -> None:
     )
 
     with pytest.raises(UpstreamError, match="upstream returned 404"):
-        await FetchService(transport).fetch("https://public.example/missing")
+        await FetchService(transport, public_destination_policy()).fetch(
+            "https://public.example/missing"
+        )
