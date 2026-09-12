@@ -3,7 +3,7 @@
 from urllib.parse import urljoin, urlsplit
 
 from content_fetcher.models import FetchResult
-from content_fetcher.transport import HttpTransport
+from content_fetcher.transport import HttpTransport, TransportError
 
 
 class FetchError(Exception):
@@ -25,15 +25,26 @@ class FetchService:
         self._transport = transport
 
     async def fetch(self, requested_url: str) -> FetchResult:
+        self._validate_url(requested_url)
         current_url = requested_url
 
         while True:
-            self._validate_url(current_url)
-            response = await self._transport.get(current_url)
+            if current_url != requested_url:
+                try:
+                    self._validate_url(current_url)
+                except InvalidUrlError as exc:
+                    raise UpstreamError("upstream returned invalid redirect") from exc
+            try:
+                response = await self._transport.get(current_url)
+            except TransportError as exc:
+                raise UpstreamError("upstream request failed") from exc
 
             location = response.headers.get("location")
             if response.status_code in {301, 302, 303, 307, 308} and location:
-                current_url = urljoin(current_url, location)
+                try:
+                    current_url = urljoin(current_url, location)
+                except ValueError as exc:
+                    raise UpstreamError("upstream returned invalid redirect") from exc
                 continue
 
             if response.status_code in {301, 302, 303, 307, 308}:

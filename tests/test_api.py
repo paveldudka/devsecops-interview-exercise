@@ -34,7 +34,8 @@ async def test_fetch_endpoint_returns_modeled_content() -> None:
 
 @pytest.mark.asyncio
 async def test_fetch_endpoint_maps_invalid_input_to_client_error() -> None:
-    app = create_app(FetchService(ScriptedTransport({})))
+    transport = ScriptedTransport({})
+    app = create_app(FetchService(transport))
 
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app), base_url="http://test"
@@ -44,9 +45,7 @@ async def test_fetch_endpoint_maps_invalid_input_to_client_error() -> None:
         )
 
     assert api_response.status_code == 422
-    assert api_response.json()["detail"] == (
-        "URL must use HTTP or HTTPS and include a hostname"
-    )
+    assert transport.requests == []
 
 
 @pytest.mark.asyncio

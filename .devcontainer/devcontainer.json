@@ -1,8 +1,7 @@
 {
   "name": "DevSecOps interview exercise",
   "build": {
-    "dockerfile": "Dockerfile",
-    "context": ".."
+    "dockerfile": "Dockerfile"
   },
   "postCreateCommand": "make verify-env",
   "customizations": {

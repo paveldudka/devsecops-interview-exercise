@@ -8,8 +8,9 @@ The intended product behavior is:
 
 - accept public HTTP and HTTPS URLs;
 - follow normal redirect chains;
-- run from a cloud workload; and
 - return fetched content to the caller.
+
+The service is deployed as a cloud workload.
 
 Preserve legitimate behavior while improving the service. Multiple coherent designs are acceptable.
 
@@ -30,7 +31,7 @@ Tell the interviewer if either command fails. Environment setup is not part of t
 
 - Do not use AI tools.
 - Public documentation is allowed.
-- Read the code and architecture notes.
+- Read the code, [architecture notes](docs/architecture.md), and `NOTES.md` template.
 - Record prioritized risks and repository evidence in `NOTES.md`.
 - Explain which improvement you would implement and why.
 
@@ -61,4 +62,4 @@ Create a local commit containing your final result; you do not need to push it. 
 - the focused implementation change; and
 - the tests or other validation evidence you added.
 
-There is no undisclosed automated pass/fail gate. Candidate-visible checks exercise the documented product behavior and repository quality boundaries; assessment also considers your reasoning and discussion.
+There is no undisclosed automated pass/fail gate. Candidate-visible checks exercise documented product behavior and code-quality checks; assessment also considers your reasoning and discussion.

@@ -7,6 +7,10 @@ from typing import Protocol
 import httpx
 
 
+class TransportError(Exception):
+    """The outbound HTTP operation failed."""
+
+
 @dataclass(frozen=True)
 class HttpResponse:
     """Transport-neutral HTTP response with lowercase-normalized header keys."""
@@ -36,11 +40,15 @@ class HttpxTransport:
 
     def __init__(self, client: httpx.AsyncClient | None = None) -> None:
         self._client = client
+        self._owns_client = client is None
 
     async def get(self, url: str) -> HttpResponse:
         if self._client is None:
             self._client = httpx.AsyncClient(follow_redirects=False)
-        response = await self._client.get(url, follow_redirects=False)
+        try:
+            response = await self._client.get(url, follow_redirects=False)
+        except httpx.HTTPError as exc:
+            raise TransportError("outbound HTTP request failed") from exc
         return HttpResponse(
             status_code=response.status_code,
             headers=response.headers,
@@ -48,5 +56,5 @@ class HttpxTransport:
         )
 
     async def close(self) -> None:
-        if self._client is not None:
+        if self._client is not None and self._owns_client:
             await self._client.aclose()

@@ -31,9 +31,6 @@ def create_app(fetch_service: FetchService | None = None) -> FastAPI:
                 await owned_transport.close()
 
     app = FastAPI(title="Content Fetcher", version="0.1.0", lifespan=lifespan)
-    # This also makes injected services available to ASGI test clients, which do
-    # not run application lifespan events automatically.
-    app.state.fetch_service = service
 
     @app.get("/healthz")
     async def health() -> dict[str, str]:
@@ -42,7 +39,6 @@ def create_app(fetch_service: FetchService | None = None) -> FastAPI:
     @app.post("/v1/fetch", response_model=FetchResult)
     async def fetch(payload: FetchRequest) -> FetchResult:
         try:
-            service: FetchService = app.state.fetch_service
             return await service.fetch(payload.url)
         except InvalidUrlError as exc:
             logger.warning("fetch failed url=%r error=%r", payload.url, exc)
