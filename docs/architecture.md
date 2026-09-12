@@ -16,11 +16,12 @@ The service is modeled as running in a cloud workload. Callers do not share the 
 ## Repository boundaries
 
 - `src/content_fetcher/api.py` defines the FastAPI boundary and error mapping.
+- `src/content_fetcher/models.py` defines the public request and response shapes.
 - `src/content_fetcher/service.py` owns fetch behavior and redirect handling.
 - `src/content_fetcher/transport.py` adapts the service to `httpx`.
 - `tests/` uses deterministic in-memory transports. Tests must not require DNS, external HTTP, cloud services, or credentials.
 
-## What is mocked
+## What is faked
 
 Candidate-visible tests replace the outbound transport with a scripted in-memory implementation. Status codes, headers, bodies, and redirect responses are fixed test data.
 

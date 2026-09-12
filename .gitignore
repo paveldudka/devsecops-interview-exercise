@@ -5,3 +5,6 @@
 __pycache__/
 *.py[cod]
 .coverage
+dist/
+*.egg-info/
+.DS_Store

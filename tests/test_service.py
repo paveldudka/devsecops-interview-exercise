@@ -2,7 +2,7 @@
 
 import pytest
 
-from content_fetcher.service import FetchError, FetchService
+from content_fetcher.service import FetchService, InvalidUrlError, UpstreamError
 from tests.fakes import ScriptedTransport, response
 
 
@@ -30,7 +30,7 @@ async def test_follows_absolute_and_relative_redirects() -> None:
     transport = ScriptedTransport(
         {
             "http://public.example/start": response(
-                302, headers=(("location", "https://cdn.example/content"),)
+                302, headers=(("Location", "https://cdn.example/content"),)
             ),
             "https://cdn.example/content": response(
                 301, headers=(("location", "/v2/content"),)
@@ -58,8 +58,30 @@ async def test_follows_absolute_and_relative_redirects() -> None:
 async def test_rejects_unsupported_url_shapes(url: str) -> None:
     transport = ScriptedTransport({})
 
-    with pytest.raises(FetchError, match="HTTP or HTTPS"):
+    with pytest.raises(InvalidUrlError, match="HTTP or HTTPS"):
         await FetchService(transport).fetch(url)
+
+    assert transport.requests == []
+
+
+@pytest.mark.asyncio
+async def test_rejects_user_information_without_making_a_request() -> None:
+    transport = ScriptedTransport({})
+
+    with pytest.raises(InvalidUrlError, match="user information"):
+        await FetchService(transport).fetch(
+            "https://user:password@public.example/article"
+        )
+
+    assert transport.requests == []
+
+
+@pytest.mark.asyncio
+async def test_malformed_ipv6_url_is_a_fetch_error() -> None:
+    transport = ScriptedTransport({})
+
+    with pytest.raises(InvalidUrlError, match="malformed"):
+        await FetchService(transport).fetch("http://[invalid")
 
     assert transport.requests == []
 
@@ -70,5 +92,5 @@ async def test_surfaces_upstream_failure() -> None:
         {"https://public.example/missing": response(status_code=404)}
     )
 
-    with pytest.raises(FetchError, match="upstream returned 404"):
+    with pytest.raises(UpstreamError, match="upstream returned 404"):
         await FetchService(transport).fetch("https://public.example/missing")

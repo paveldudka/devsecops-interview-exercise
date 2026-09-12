@@ -23,9 +23,9 @@ make baseline    # run all candidate-visible checks
 make test        # run candidate-visible tests
 make lint        # check formatting and lint
 make typecheck   # run static type checking
+make run         # start the local API on port 8000
 ```
 
 ## Confidentiality
 
-Copyright (c) 2026. All rights reserved. This repository contains confidential interview material. Do not copy, publish, distribute, or use it outside the interview process without written permission.
-Synthetic Senior DevSecOps interview exercise
+Copyright (c) 2026 Pasha Dudka. All rights reserved. This repository contains confidential interview material. Do not copy, publish, distribute, or use it outside the interview process without written permission.

@@ -10,6 +10,14 @@ class FetchError(Exception):
     """A fetch request could not be completed."""
 
 
+class InvalidUrlError(FetchError):
+    """The supplied URL is not supported by the service."""
+
+
+class UpstreamError(FetchError):
+    """An upstream response could not satisfy the fetch request."""
+
+
 class FetchService:
     """Retrieve content while preserving normal HTTP redirect behavior."""
 
@@ -28,8 +36,14 @@ class FetchService:
                 current_url = urljoin(current_url, location)
                 continue
 
+            if 300 <= response.status_code < 400:
+                raise UpstreamError(
+                    "upstream returned redirect "
+                    f"{response.status_code} without location"
+                )
+
             if response.status_code >= 400:
-                raise FetchError(
+                raise UpstreamError(
                     f"upstream returned {response.status_code} for {current_url}"
                 )
 
@@ -44,8 +58,11 @@ class FetchService:
 
     @staticmethod
     def _validate_url(url: str) -> None:
-        parsed = urlsplit(url)
+        try:
+            parsed = urlsplit(url)
+        except ValueError as exc:
+            raise InvalidUrlError("URL is malformed") from exc
         if parsed.scheme not in {"http", "https"} or not parsed.hostname:
-            raise FetchError("URL must use HTTP or HTTPS and include a hostname")
+            raise InvalidUrlError("URL must use HTTP or HTTPS and include a hostname")
         if parsed.username is not None or parsed.password is not None:
-            raise FetchError("URLs containing user information are not supported")
+            raise InvalidUrlError("URLs containing user information are not supported")
